@@ -1,10 +1,7 @@
 var express = require('express');
 var router = express.Router();
 
-const { Pool } = require('pg');
-const db = new Pool({
-    connectionString: process.env.DB_URL
-});
+var db = require('./src/config/db');
 
 router.get('/', async (req, res) => {
     res.json(await db.query('SELECT * FROM playlists WHERE id IN (?)', [req.query.ids]));

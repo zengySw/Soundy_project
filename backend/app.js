@@ -4,8 +4,14 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+var indexRouter = require('./src/routes/index');
+var usersRouter = require('./src/routes/users');
+var albumsRouter = require('./src/routes/albums');
+var tracksRouter = require('./src/routes/tracks');
+var playlistsRouter = require('./src/routes/playlists');
+var searchRouter = require('./src/routes/search');
+
+var db = require('./src/config/db');
 
 const dotenv = require('dotenv');
 dotenv.config();
@@ -25,19 +31,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
-app.use('/tracks', indexRouter);
-app.use('/albums', indexRouter);
-app.use('/playlists', indexRouter);
+app.use('/tracks', tracksRouter);
+app.use('/albums', albumsRouter);
+app.use('/playlists', playlistsRouter);
+app.use('/search', searchRouter);
 
-app.get('/search', (req, res) => {
-  // мб будем брать отсюда id и уже через роуты отдавать фулл обьекты
-  res.json({
-    tracks: db.query('SELECT * FROM tracks WHERE name ILIKE ?', [`%${req.query.q}%`]),
-    albums: db.query('SELECT * FROM albums WHERE name ILIKE ?', [`%${req.query.q}%`]),
-    playlists: db.query('SELECT * FROM playlists WHERE name ILIKE ?', [`%${req.query.q}%`]),
-    users: db.query('SELECT * FROM users WHERE name ILIKE ?', [`%${req.query.q}%`])
-  });
-});
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
