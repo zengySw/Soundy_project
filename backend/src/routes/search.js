@@ -13,14 +13,82 @@ router.get('/', (req, res) => {
     });
 });
 
-router.post('/tracks', async (req, res) => {
-    req.body.tracks.map((track) => {
-        sTrack = db.query('SELECT * FROM tracks JOIN tracks_compositors ON tracks.id = tracks_compositors.track_id JOIN users ON tracks_compositors.artist_id = users.id WHERE tracks.title = ? AND users.name = ?', [track.title, track.authors]);
-    });
-    if (sTrack) {
-        res.json.tracks.append(sTrack);
+router.get('/tracks', async (req, res) => {
+    try {
+
+        const result = await db.query(`
+            SELECT 
+                *,
+                GREATEST(
+                    similarity(t.name, $1),
+                    similarity(a.name, $1)
+                ) AS score
+            FROM tracks t, artists a JOIN tracks_collaborators tc ON t.id = tc.track_id JOIN artists a ON tc.artist_id = a.id
+            WHERE t.name % $1 OR a.name % $1
+            ORDER BY score DESC
+            LIMIT 20;
+        `, [req.query.q ? req.query.q : '']);
+
+        const tracks = result.rows;
+
+        if (tracks.length === 0) {
+            () => { } // find on another platforms
+        }
+
+        return res.json({ tracks });
+
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Search failed" });
     }
-    else () => { };
+});
+
+router.get('/artists', async (req, res) => {
+    try {
+        const result = await db.query(`
+            SELECT 
+                *,
+                similarity(name, $1) AS score
+            FROM artists
+            WHERE name % $1
+            ORDER BY score DESC
+            LIMIT 20;
+        `, [req.query.q ? req.query.q : '']);
+
+        if (result.rows.length === 0) {
+            () => { } // find on another platforms
+        }
+
+        return res.json({ artists: result.rows });
+
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Search failed" });
+    }
+});
+
+router.get('/playlists', async (req, res) => {
+    try {
+        const result = await db.query(`
+            SELECT 
+                *,
+                similarity(name, $1) AS score
+            FROM playlists
+            WHERE name % $1
+            ORDER BY score DESC
+            LIMIT 20;
+        `, [req.query.q ? req.query.q : '']);
+
+        if (result.rows.length === 0) {
+            () => { } // find on another platforms
+        }
+
+        return res.json({ playlists: result.rows });
+
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Search failed" });
+    }
 });
 
 module.exports = router;
