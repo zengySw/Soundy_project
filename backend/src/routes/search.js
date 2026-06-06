@@ -1,7 +1,7 @@
 var express = require('express');
 var router = express.Router();
 
-var db = require('./src/config/db');
+var db = require('../config/db');
 
 router.get('/', (req, res) => {
     // мб будем брать отсюда id и уже через роуты отдавать фулл обьекты
@@ -20,26 +20,24 @@ router.get('/tracks', async (req, res) => {
             SELECT 
                 *,
                 GREATEST(
-                    similarity(t.name, $1),
+                    similarity(t.title, $1),
                     similarity(a.name, $1)
                 ) AS score
-            FROM tracks t, artists a JOIN tracks_collaborators tc ON t.id = tc.track_id JOIN artists a ON tc.artist_id = a.id
-            WHERE t.name % $1 OR a.name % $1
+            FROM tracks t JOIN tracks_compositors tc ON t.id = tc.track_id JOIN artists a ON tc.author_id = a.id
+            WHERE t.title % $1 OR a.name % $1
             ORDER BY score DESC
             LIMIT 20;
-        `, [req.query.q ? req.query.q : '']);
+        `, [req.query.q || '']);
 
-        const tracks = result.rows;
-
-        if (tracks.length === 0) {
-            () => { } // find on another platforms
+        if (result.rows.length == 0) {
+            () => { throw new Error("No tracks found, searching on another platforms..."); } // find on another platforms
         }
 
-        return res.json({ tracks });
+        return res.json({ tracks: result.rows });
 
     } catch (err) {
         console.error(err);
-        return res.status(500).json({ error: "Search failed" });
+        return res.status(500).json({ error: err.message || "Search failed" });
     }
 });
 
@@ -53,17 +51,17 @@ router.get('/artists', async (req, res) => {
             WHERE name % $1
             ORDER BY score DESC
             LIMIT 20;
-        `, [req.query.q ? req.query.q : '']);
+        `, [req.query.q || '']);
 
         if (result.rows.length === 0) {
-            () => { } // find on another platforms
+            () => { console.log("No artists found, searching on another platforms..."); } // find on another platforms
         }
 
         return res.json({ artists: result.rows });
 
     } catch (err) {
         console.error(err);
-        return res.status(500).json({ error: "Search failed" });
+        return res.status(500).json({ error: err.message || "Search failed" });
     }
 });
 
@@ -77,17 +75,17 @@ router.get('/playlists', async (req, res) => {
             WHERE name % $1
             ORDER BY score DESC
             LIMIT 20;
-        `, [req.query.q ? req.query.q : '']);
+        `, [req.query.q || '']);
 
         if (result.rows.length === 0) {
-            () => { } // find on another platforms
+            () => { console.log("No playlists found, searching on another platforms..."); } // find on another platforms
         }
 
         return res.json({ playlists: result.rows });
 
     } catch (err) {
         console.error(err);
-        return res.status(500).json({ error: "Search failed" });
+        return res.status(500).json({ error: err.message || "Search failed" });
     }
 });
 

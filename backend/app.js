@@ -4,6 +4,11 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
+const dotenv = require('dotenv');
+dotenv.config();
+
+var db = require('./src/config/db');
+
 var indexRouter = require('./src/routes/index');
 var usersRouter = require('./src/routes/users');
 var albumsRouter = require('./src/routes/albums');
@@ -11,13 +16,8 @@ var tracksRouter = require('./src/routes/tracks');
 var playlistsRouter = require('./src/routes/playlists');
 var searchRouter = require('./src/routes/search');
 
-var db = require('./src/config/db');
-
-const dotenv = require('dotenv');
-dotenv.config();
-
 var app = express();
-var port = process.env.PORT;
+const port = process.env.PORT || 4000;
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -40,10 +40,6 @@ app.use('/search', searchRouter);
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
   next(createError(404));
-});
-
-app.listen(port, function () {
-  console.log("Server is running on port " + port);
 });
 
 // error handler

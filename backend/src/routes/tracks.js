@@ -1,7 +1,7 @@
 var express = require('express');
 var router = express.Router();
 
-var db = require('./src/config/db');
+var db = require('../config/db');
 
 router.get('/', async (req, res) => {
     res.json(await db.query('SELECT * FROM tracks WHERE id IN (?)', [req.query.ids]));
