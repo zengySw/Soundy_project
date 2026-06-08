@@ -3,6 +3,9 @@ var router = express.Router();
 
 var db = require('../config/db');
 
+const { outSearch } = require('../services/outSearch');
+const { saveTracks } = require('../utils/fillDb');
+
 router.get('/', (req, res) => {
     // мб будем брать отсюда id и уже через роуты отдавать фулл обьекты
     res.json({
@@ -19,6 +22,8 @@ router.get('/tracks', async (req, res) => {
         const result = await db.query(`
             SELECT 
                 *,
+                a.name,
+                a.id,
                 GREATEST(
                     similarity(t.title, $1),
                     similarity(a.name, $1)
@@ -30,7 +35,25 @@ router.get('/tracks', async (req, res) => {
         `, [req.query.q || '']);
 
         if (result.rows.length == 0) {
-            () => { throw new Error("No tracks found, searching on another platforms..."); } // find on another platforms
+            // () => { throw new Error("No tracks found, searching on another platforms..."); } // find on another platforms
+            const externalTracks = await outSearch(req.query.q);
+            const ids = await saveTracks(externalTracks);
+            return res.json({
+                tracks: await db.query(`
+             SELECT 
+                *,
+                a.name,
+                a.id,
+                GREATEST(
+                    similarity(t.title, $1),
+                    similarity(a.name, $1)
+                ) AS score
+            FROM tracks t JOIN tracks_compositors tc ON t.id = tc.track_id JOIN artists a ON tc.author_id = a.id
+            WHERE t.title % $1 OR a.name % $1
+            ORDER BY score DESC
+            LIMIT 20;
+        `, [ids]).rows
+            });
         }
 
         return res.json({ tracks: result.rows });
@@ -59,6 +82,29 @@ router.get('/artists', async (req, res) => {
 
         return res.json({ artists: result.rows });
 
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: err.message || "Search failed" });
+    }
+});
+
+router.get('/albums', async (req, res) => {
+    try {
+        const result = await db.query(`
+            SELECT
+                *,
+                similarity(name, $1) AS score
+            FROM albums
+            WHERE name % $1
+            ORDER BY score DESC
+            LIMIT 20;
+        `, [req.query.q || '']);
+
+        if (result.rows.length === 0) {
+            () => { console.log("No albums found, searching on another platforms..."); } // find on another platforms
+        }
+
+        return res.json({ albums: result.rows });
     } catch (err) {
         console.error(err);
         return res.status(500).json({ error: err.message || "Search failed" });
