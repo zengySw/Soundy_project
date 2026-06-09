@@ -2,20 +2,20 @@ const { mapDeezerTrack } = require("../utils/dataMaps");
 
 const API = 'https://api.deezer.com';
 
-async function searchDeezerTracks(q) {
-    const res = await fetch(`${API}/search?q=${q}`);
+async function searchDeezerTracks(q, limit = 20) {
+    const res = await fetch(`${API}/search?q=${q}&limit=${limit}`);
     const json = await res.json();
     return json.data || [];
 }
 
-async function searchDeezerAlbums(q) {
-    const res = await fetch(`${API}/search/album?q=${q}`);
+async function searchDeezerAlbums(q, limit = 20) {
+    const res = await fetch(`${API}/search/album?q=${q}&limit=${limit}`);
     const json = await res.json();
     return json.data || [];
 }
 
-async function searchDeezerArtists(q) {
-    const res = await fetch(`${API}/search/artist?q=${q}`);
+async function searchDeezerArtists(q, limit = 20) {
+    const res = await fetch(`${API}/search/artist?q=${q}&limit=${limit}`);
     const json = await res.json();
     return json.data || [];
 }

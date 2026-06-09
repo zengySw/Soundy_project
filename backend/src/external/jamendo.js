@@ -1,8 +1,8 @@
 const API = 'https://api.jamendo.com/v3.0';
-async function searchJamendoTracks(q) {
+async function searchJamendoTracks(q, limit = 20) {
     const res = await fetch(
         `${API}/tracks/?client_id=${process.env.JAMENDO_ID}` +
-        `&format=json&limit=10&namesearch=${encodeURIComponent(q)}`
+        `&format=json&limit=10&namesearch=${encodeURIComponent(q)}&limit=${limit}`
     );
     const json = await res.json();
     return json.data || [];

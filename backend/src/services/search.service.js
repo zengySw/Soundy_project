@@ -7,8 +7,10 @@ const { searchJamendoMp3 } = require('../external/jamendo');
 const { searchAudiusMp3 } = require('../external/audius');
 
 async function searchTracks(q, limit = 1) {
-
+    if (!q || !q.length) return await findTracks(q, limit);
     const queries = q.split(",").map(s => s.trim()).filter(Boolean);
+
+    console.log(queries);
 
     const results = [];
 
@@ -19,19 +21,20 @@ async function searchTracks(q, limit = 1) {
         const res = await searchDeezerTracks(query).then(tracks => tracks.map(t => mapDeezerTrack(t)));
 
         for (const t of res) {
-            const album = await findAlbums(t.album.title)[0];
-            if (!album) t.album = await searchAlbums(t.album.title || t.album, 1)[0];
+            const album = (await findAlbums(t.album.title))[0];
+            if (!album) t.album = (await searchAlbums(t.album.title, 1))[0] || null;
             else t.album = album;
-            const artist = await findArtists(t.artists.map(artist => artist.name, 1)[0]);
-            if (!artist) t.artists = await searchArtists(t.artists.map(a => a.name) || t.artist, 1);
-            else t.artist = artist;
+            t.artists = await Promise.all(
+                t.artists.map(async (a) => {
+                    const found = (await findArtists(a.name))[0];
+                    return found || (await searchArtists(a.name, 1))[0] || a;
+                })
+            );
             if (!t.path) t.path = await outSearchMp3(t.title + '' + t.author.name);
         }
 
-        console.log(res);
-
-        await saveTracks(res);
-        results.push(...await findTracks(query, limit));
+        const ids = await saveTracks(res);
+        results.push(...await findTracks(query, limit)); // rework on ids search
     }
 
     return results;
@@ -48,30 +51,35 @@ async function outSearchMp3(q) {
 }
 
 async function searchAlbums(q, limit = 1) {
+    if (!q || !q.length) return await findAlbums(q, limit);
     const queries = q.split(",").map(s => s.trim()).filter(Boolean);
 
     const results = []
 
     for (const query of queries) {
         const local = await findAlbums(query, limit);
-        if (local.length) return local;
+        if (local.length) { results.push(...local); continue; }
 
-        const res = await searchDeezerAlbums(query).then(albums => albums.map(a => mapDeezerAlbum(a)));
+        const res = await searchDeezerAlbums(query, 1).then(albums => albums.map(a => mapDeezerAlbum(a)));
 
         for (const a of res) {
-            const artists = await findArtists(a.artists.map(artist => artist.name, 1));
-            if (!artists) a.artists = await searchArtists(a.artists.map(artist => artist.name) || a.artist, 1);
-            else a.artists = artists;
+            a.artists = await Promise.all(
+                a.artists.map(async (artist) => {
+                    const found = (await findArtists(artist.name))[0];
+                    return found || (await searchArtists(artist.name, 1))[0] || artist;
+                })
+            );
         }
 
         await saveAlbums(res);
-        results.push(...await findAlbums(res, limit));
+        results.push(...await findAlbums(query, limit));
     }
-    return results || [];
+    return results;
 }
 
 async function searchArtists(q, limit = 1) {
-    const queries = q?.split(",").map(s => s.trim()).filter(Boolean) || '';
+    if (!q || !q.length) return await findArtists(q, limit);
+    const queries = q?.split(",").map(s => s.trim()).filter(Boolean);
 
     const results = []
 

@@ -1,6 +1,6 @@
 const db = require('../config/db');
 
-async function findArtists(q, limit=20) {
+async function findArtists(q = ' ', limit = 20) {
     return await db.query(`
             SELECT 
                 *,
@@ -9,7 +9,7 @@ async function findArtists(q, limit=20) {
             WHERE name % $1
             ORDER BY score DESC
             LIMIT $2;
-        `, [q || '', limit]).then(r => r.rows);
+        `, [q, limit]).then(r => r.rows);
 }
 
 async function saveArtists(artists) {

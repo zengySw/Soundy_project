@@ -1,7 +1,7 @@
 const API = 'https://api.audius.co/v1';
-async function searchAudiusTracks(q) {
+async function searchAudiusTracks(q, limit = 20) {
     const res = await fetch(
-        `${API}/tracks/search?query=${encodeURIComponent(q)}`
+        `${API}/tracks/search?query=${encodeURIComponent(q)}&limit=${limit}`
     );
     const json = await res.json();
     return json.data || [];

@@ -8,7 +8,7 @@ function mapDeezerTrack(track) {
         external_id: String(track.id),
         title: track.title,
         artists: [{ name: track.artist?.name || "Unknown", subscribers: null }],
-        album: track.album?.title || null,
+        album: { title: track.album?.title || null },
         duration_ms: track.duration * 1000,
         cover_path: track.album?.cover_xl,
         path: track.preview
@@ -23,7 +23,7 @@ function mapJamendoTrack(track) {
         external_id: String(track.id),
         title: track.name,
         artists: [{ name: track.artist_name || "Unknown", subscribers: null }],
-        album: track.album_name || null,
+        album: { title: track.album_name || null },
         duration_ms: track.duration,
         cover_path: track.album_image || track.image,
         path: track.audio
@@ -89,7 +89,7 @@ function mapDeezerAlbum(album) {
         rank: 1.0,
         external_id: String(album.id),
         title: album.title,
-        artists: [{ name: album.artist_name || "Unknown", subscribers: null }],
+        artists: [{ name: album.artist?.name || "Unknown", subscribers: null }],
         cover_path: album.cover_xl
     };
 }
