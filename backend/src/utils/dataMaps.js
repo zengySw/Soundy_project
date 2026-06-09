@@ -10,8 +10,8 @@ function mapDeezerTrack(track) {
         artist: track.artist?.name || "Unknown",
         album: track.album?.title || null,
         duration_ms: track.duration * 1000,
-        artwork: track.album?.cover_xl,
-        url: track.preview
+        cover_path: track.album?.cover_xl,
+        path: track.preview
     };
 }
 
@@ -25,8 +25,8 @@ function mapJamendoTrack(track) {
         artist: track.artist_name,
         album: track.album_name || null,
         duration_ms: track.duration,
-        artwork: track.album_image || track.image,
-        url: track.audio
+        cover_path: track.album_image || track.image,
+        path: track.audio
     };
 }
 
@@ -40,8 +40,8 @@ function mapAudiusTrack(track) {
         artist: track.user?.name || "Unknown",
         album: null,
         duration_ms: track.duration,
-        artwork: track.artwork?.["480x480"],
-        url: track.stream?.url
+        cover_path: track.artwork?.["480x480"],
+        path: track.stream?.url
     };
 }
 
@@ -64,13 +64,45 @@ function rankTracks(tracks, query) {
         .sort((a, b) => b.score - a.score);
 }
 
-function mapPlaylist(playlist, tracks) {
+function rankAlbums(albums, query) {
+
+    const fuse = new Fuse(albums, {
+        keys: [
+            { name: 'title', weight: 0.7 },
+            { name: 'artist', weight: 0.3 }
+        ],
+        includeScore: true,
+        threshold: 0.4
+    });
+
+    return fuse.search(query)
+        .map(r => ({
+            ...r.item,
+            score: (r.item.rank * 0.6) + ((1 - r.score) * 0.4)
+        }))
+        .sort((a, b) => b.score - a.score);
+}
+
+function mapDeezerAlbum(album) {
     return {
-        id: playlist.id,
-        name: playlist.name,
-        description: playlist.description,
-        tracks
+        source: "deezer",
+        rank: 1.0,
+        external_id: String(album.id),
+        title: album.title,
+        artist: album.artist?.name || "Unknown",
+        cover_path: album.cover_xl
     };
 }
 
-module.exports = { mapAudiusTrack, mapDeezerTrack, mapJamendoTrack, rankTracks, mapPlaylist };
+function mapDeezerArtist(artist) {
+    return {
+        source: "deezer",
+        rank: 1.0,
+        external_id: String(artist.id),
+        name: artist.name,
+        subscribers: artist.nb_fans,
+        cover_path: artist.picture_xl
+    };
+}
+
+module.exports = { mapAudiusTrack, mapDeezerTrack, mapJamendoTrack, rankTracks, rankAlbums, mapDeezerAlbum, mapDeezerArtist, mapPlaylist };
