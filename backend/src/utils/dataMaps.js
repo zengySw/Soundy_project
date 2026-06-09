@@ -7,7 +7,7 @@ function mapDeezerTrack(track) {
 
         external_id: String(track.id),
         title: track.title,
-        artist: track.artist?.name || "Unknown",
+        artists: [{ name: track.artist?.name || "Unknown", subscribers: null }],
         album: track.album?.title || null,
         duration_ms: track.duration * 1000,
         cover_path: track.album?.cover_xl,
@@ -22,7 +22,7 @@ function mapJamendoTrack(track) {
 
         external_id: String(track.id),
         title: track.name,
-        artist: track.artist_name,
+        artists: [{ name: track.artist_name || "Unknown", subscribers: null }],
         album: track.album_name || null,
         duration_ms: track.duration,
         cover_path: track.album_image || track.image,
@@ -37,7 +37,7 @@ function mapAudiusTrack(track) {
 
         external_id: String(track.id),
         title: track.title,
-        artist: track.user?.name || "Unknown",
+        artists: [{ name: track.user?.name || "Unknown", subscribers: track.user?.follower_count ?? null }],
         album: null,
         duration_ms: track.duration,
         cover_path: track.artwork?.["480x480"],
@@ -50,7 +50,7 @@ function rankTracks(tracks, query) {
     const fuse = new Fuse(tracks, {
         keys: [
             { name: 'title', weight: 0.7 },
-            { name: 'artist', weight: 0.3 }
+            { name: 'artists.name', weight: 0.3 }
         ],
         includeScore: true,
         threshold: 0.4
@@ -89,7 +89,7 @@ function mapDeezerAlbum(album) {
         rank: 1.0,
         external_id: String(album.id),
         title: album.title,
-        artist: album.artist?.name || "Unknown",
+        artists: [{ name: album.artist_name || "Unknown", subscribers: null }],
         cover_path: album.cover_xl
     };
 }
@@ -105,4 +105,4 @@ function mapDeezerArtist(artist) {
     };
 }
 
-module.exports = { mapAudiusTrack, mapDeezerTrack, mapJamendoTrack, rankTracks, rankAlbums, mapDeezerAlbum, mapDeezerArtist, mapPlaylist };
+module.exports = { mapAudiusTrack, mapDeezerTrack, mapJamendoTrack, rankTracks, rankAlbums, mapDeezerAlbum, mapDeezerArtist };

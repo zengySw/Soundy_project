@@ -15,7 +15,7 @@ router.get('/', async (req, res) => {
 
 router.get('/tracks', async (req, res) => {
     try {
-        return res.json({ tracks: searchTracks(encodeURIComponent(req.query.q)) });
+        return res.json({ tracks: await searchTracks(encodeURIComponent(req.query.q)) });
     } catch (err) {
         console.error(err);
         return res.status(500).json({ error: err.message || "Search failed" });
@@ -24,7 +24,7 @@ router.get('/tracks', async (req, res) => {
 
 router.get('/artists', async (req, res) => {
     try {
-        return res.json({ artists: searchArtists(encodeURIComponent(req.query.q)) });
+        return res.json({ artists: await searchArtists(encodeURIComponent(req.query.q)) });
     } catch (err) {
         console.error(err);
         return res.status(500).json({ error: err.message || "Search failed" });
@@ -33,7 +33,7 @@ router.get('/artists', async (req, res) => {
 
 router.get('/albums', async (req, res) => {
     try {
-        return res.json({ albums: searchAlbums(encodeURIComponent(req.query.q)) });
+        return res.json({ albums: await searchAlbums(encodeURIComponent(req.query.q)) });
     } catch (err) {
         console.error(err);
         return res.status(500).json({ error: err.message || "Search failed" });

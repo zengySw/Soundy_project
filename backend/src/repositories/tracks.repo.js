@@ -50,18 +50,13 @@ async function saveTracks(tracks) {
             t.path,
             t.cover_path,
         ]);
-        await db.query(`
-            INSERT INTO tracks_compositors (track_id, author_id)
-            VALUES (
-                (SELECT id FROM tracks WHERE path = $1),
-                $2
-            )
-            ON CONFLICT DO NOTHING;
-        `, [
-            t.path,
-            t.artists_id
-        ]);
-
+        for (const artist of t.artists) {
+            await db.query(`
+        INSERT INTO tracks_compositors (track_id, author_id)
+        VALUES ( $1, $2 )
+        ON CONFLICT DO NOTHING;
+    `, [result.rows[0].id, artist.id]);
+        }
         ids.push(result.rows[0].id);
     }
 
