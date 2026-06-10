@@ -32,6 +32,7 @@ async function searchTracks(q, limit = 1) {
                     })
                 );
                 if (!t.path) t.path = await outSearchMp3(t.title + ' ' + t.artists[0]?.name);
+                if (!t.artists[0]?.id) return null;
                 return t;
             })
         ).then(r => r.filter(Boolean));

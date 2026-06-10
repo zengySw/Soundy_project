@@ -150,10 +150,10 @@ async function savePlaylists(playlists) {
 
         for (const track of (p.tracks || [])) {
             await db.query(`
-                INSERT INTO playlist_tracks (playlist_id, track_id, added_by, position)
-                VALUES ($1, $2, $3, $4)
+                INSERT INTO playlist_tracks (playlist_id, track_id, added_by)
+                VALUES ($1, $2, $3)
                 ON CONFLICT DO NOTHING;
-            `, [playlistId, track.id, p.owner_id, track.position ?? null]);
+            `, [playlistId, track.id, p.owner_id]);
         }
 
         for (const collaborator of (p.collaborators || [])) {
