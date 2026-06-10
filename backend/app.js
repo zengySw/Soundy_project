@@ -15,6 +15,8 @@ var albumsRouter = require('./src/routes/albums');
 var tracksRouter = require('./src/routes/tracks');
 var playlistsRouter = require('./src/routes/playlists');
 var searchRouter = require('./src/routes/search');
+var usersRouter = require('./src/routes/users');
+var authRouter = require('./src/routes/auth');
 
 var app = express();
 const port = process.env.PORT || 4000;
@@ -35,7 +37,8 @@ app.use('/tracks', tracksRouter);
 app.use('/albums', albumsRouter);
 app.use('/playlists', playlistsRouter);
 app.use('/search', searchRouter);
-
+app.use('/auth', authRouter);
+app.use('/users', usersRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
