@@ -12,6 +12,16 @@ async function findArtists(q = ' ', limit = 20) {
         `, [q, limit]).then(r => r.rows);
 }
 
+async function getArtists(ids) {
+    return await db.query(`
+        SELECT
+        *
+        FROM artists a
+        WHERE id = ANY($1)
+        ORDER by id
+        `, [ids]).then(r => r.rows);
+}
+
 async function saveArtists(artists) {
     const ids = [];
     for (const a of artists) {
@@ -29,4 +39,4 @@ async function saveArtists(artists) {
 }
 
 
-module.exports = { findArtists, saveArtists };
+module.exports = { findArtists, saveArtists, getArtists };

@@ -34,12 +34,31 @@ async function findAlbums(q = ' ', limit = 20) {
     `, [q, limit]).then(r => r.rows);
 }
 
+async function getAlbums(ids) {
+    return await db.query(`
+        SELECT
+        albums.*,
+        json_agg(
+            json_build_object('id', a.id, 'name', a.name, 'subscribers', a.subscribers)
+        ) FILTER (WHERE a.id IS NOT NULL) AS artists,
+        json_agg(
+            json_build_object('id', t.id, 'title', t.title, 'duration_ms', t.duration_ms, 'path', t.path, 'cover_path', t.cover_path)
+        ) FILTER (WHERE t.id IS NOT NULL) AS tracks
+        FROM albums
+        LEFT JOIN albums_compositors ac ON albums.id = ac.album_id
+        LEFT JOIN artists a ON ac.artist_id = a.id
+        LEFT JOIN tracks t ON albums.id = t.album_id
+        WHERE albums.id = ANY($1)
+        GROUP BY albums.id
+        ORDER BY albums.id
+        `, [ids]).then(r => r.rows);
+}
+
 async function saveAlbums(albums) {
 
     const ids = [];
 
     for (const a of albums) {
-        console.log("[album before save]", a);
         const result = await db.query(`
             INSERT INTO albums (title, year, cover_path)
             VALUES ($1, $2, $3)
@@ -61,4 +80,4 @@ async function saveAlbums(albums) {
     return ids;
 }
 
-module.exports = { findAlbums, saveAlbums };
+module.exports = { findAlbums, saveAlbums, getAlbums };

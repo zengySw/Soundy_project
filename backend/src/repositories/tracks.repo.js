@@ -1,29 +1,5 @@
 const db = require('../config/db');
 
-// async function findTracks(q, limit = 20) {
-//     return await db.query(`
-//             SELECT 
-//                 t.*,
-//                 json_agg(
-//                     json_build_object(
-//                     a.*
-//                     )
-//                 ),
-//                 json_build_object (
-//                     al.*
-//                 ),
-//                 GREATEST(
-//                     similarity(t.title, $1),
-//                     similarity(a.name, $1)
-//                 ) AS score
-//             FROM tracks t JOIN tracks_compositors tc ON t.id = tc.track_id JOIN artists a ON tc.author_id = a.id join albums al on al.id = t.album_id
-//             WHERE t.title % $1 OR a.name % $1
-//             GROUP BY t.id, al.*, a.name
-//             ORDER BY score DESC
-//             LIMIT $2;
-//         `, [q || '', limit]).then(r => r.rows);
-// }
-
 async function findTracks(q = ' ', limit = 20) {
     return await db.query(`
         SELECT 
@@ -64,10 +40,33 @@ async function findTracks(q = ' ', limit = 20) {
     `, [q, limit]).then(r => r.rows);
 }
 
+async function getTracks(ids) {
+    return await db.query(`
+        Select
+        t.*,
+        json_agg(
+            json_build_object(
+            'id', a.id,
+            'name', a.name,
+            'subscribers', a.subscribers
+        )) as artists,
+        json_build_object(
+            'id', al.id,
+            'title', al.title,
+            'cover_path', al.cover_path
+        ) as album
+        From tracks t
+        LEFT JOIN tracks_compositors tc ON t.id = tc.track_id
+        LEFT JOIN artists a ON tc.author_id = a.id
+        LEFT JOIN albums al ON al.id = t.album_id
+        WHERE t.id = ANY($1)
+        GROUP by t.id, al.id, al.title, al.cover_path
+        ORDER BY t.id
+        `, [ids]).then(r => r.rows);
+}
+
 async function saveTracks(tracks) {
     const ids = [];
-
-    // console.log(tracks);
 
     for (const t of tracks) {
 
@@ -105,4 +104,4 @@ async function saveTracks(tracks) {
     return ids;
 }
 
-module.exports = { findTracks, saveTracks };
+module.exports = { findTracks, saveTracks, getTracks };

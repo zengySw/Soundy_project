@@ -20,6 +20,18 @@ async function searchDeezerArtists(q, limit = 20) {
     return json.data || [];
 }
 
+async function searchDeezerPlaylists(q, limit = 20) {
+    const res = await fetch(`${API}/search/playlist?q=${q}&limit=${limit}`);
+    const data = await res.json();
+    return await Promise.all(
+        (data.data || []).map(async (p) => {
+            const tracks = await fetch(p.tracklist).then(r => r.json());
+            p.tracks = tracks.data || [];
+            return p;
+        })
+    );
+}
+
 async function searchDeezerMp3(q, candidates) {
     try {
         const res = await fetch(
@@ -39,4 +51,4 @@ async function searchDeezerMp3(q, candidates) {
     }
 }
 
-module.exports = { searchDeezerAlbums, searchDeezerArtists, searchDeezerTracks, searchDeezerMp3 };
+module.exports = { searchDeezerAlbums, searchDeezerArtists, searchDeezerTracks, searchDeezerPlaylists, searchDeezerMp3 };

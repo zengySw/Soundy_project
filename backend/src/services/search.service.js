@@ -1,8 +1,9 @@
 const { findTracks, saveTracks } = require('../repositories/tracks.repo');
 const { findAlbums, saveAlbums } = require('../repositories/albums.repo');
 const { findArtists, saveArtists } = require('../repositories/artists.repo');
-const { searchDeezerTracks, searchDeezerMp3, searchDeezerAlbums, searchDeezerArtists } = require("../external/deezer");
-const { mapDeezerTrack, mapDeezerAlbum, mapDeezerArtist, rankAlbums, rankTracks } = require('../utils/dataMaps');
+const { findPlaylists, savePlaylists } = require('../repositories/playlists.repo');
+const { searchDeezerTracks, searchDeezerMp3, searchDeezerAlbums, searchDeezerArtists, searchDeezerPlaylists } = require("../external/deezer");
+const { mapDeezerTrack, mapDeezerAlbum, mapDeezerArtist, mapDeezerPlaylist, rankAlbums, rankTracks, rankPlaylists } = require('../utils/dataMaps');
 const { searchJamendoMp3 } = require('../external/jamendo');
 const { searchAudiusMp3 } = require('../external/audius');
 
@@ -73,11 +74,9 @@ async function searchAlbums(q, limit = 1) {
             );
         }
 
-        await saveAlbums(res);
+        const ids = await saveAlbums(res);
         results.push(...rankAlbums(await findAlbums(query, limit), query));
     }
-
-    console.log('[RESULT OF ALBUMS SEARCH]', results);
 
     return results;
 }
@@ -92,11 +91,39 @@ async function searchArtists(q, limit = 1) {
         const local = await findArtists(query, limit);
         if (local.length) { results.push(...local); continue; }
         const res = await searchDeezerArtists(query).then(a => a.map(a => mapDeezerArtist(a)));
-        await saveArtists(res);
+        const ids = await saveArtists(res);
         results.push(...await findArtists(query, limit));
     }
 
     return results;
 }
 
-module.exports = { searchAlbums, searchArtists, searchTracks };
+async function searchPlaylists(q, limit = 1) {
+    if (!q || !q.length) return await findPlaylists(q, limit);
+    const queries = q.split(",").map(s => s.trim()).filter(Boolean);
+    const results = [];
+
+    for (const query of queries) {
+        const local = await findPlaylists(query, limit);
+        if (local.length) { results.push(...local); continue; }
+
+        const res = await searchDeezerPlaylists(query, limit).then(playlists => playlists.map(p => mapDeezerPlaylist(p)));
+
+        const resolved = await Promise.all(
+            res.map(async (p) => {
+                const titles = (p.tracks || []).map(t =>
+                    t.title + (t.artists?.[0]?.name ? ' ' + t.artists[0].name : '')
+                ).join(',');
+                p.tracks = titles.length ? await searchTracks(titles, 1) : [];
+                return p;
+            })
+        );
+
+        await savePlaylists(resolved);
+        results.push(...rankPlaylists(await findPlaylists(query, limit), query).slice(0, limit));
+    }
+
+    return results;
+}
+
+module.exports = { searchAlbums, searchArtists, searchTracks, searchPlaylists };

@@ -10,7 +10,7 @@ dotenv.config();
 var db = require('./src/config/db');
 
 var indexRouter = require('./src/routes/index');
-var usersRouter = require('./src/routes/users');
+var artistsRouter = require('./src/routes/artists');
 var albumsRouter = require('./src/routes/albums');
 var tracksRouter = require('./src/routes/tracks');
 var playlistsRouter = require('./src/routes/playlists');
@@ -30,7 +30,7 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
-app.use('/users', usersRouter);
+app.use('/artists', artistsRouter);
 app.use('/tracks', tracksRouter);
 app.use('/albums', albumsRouter);
 app.use('/playlists', playlistsRouter);

@@ -76,8 +76,6 @@ function rankAlbums(albums, query) {
         ignoreLocation: true
     });
 
-    console.log('[FUSE SEARCH]',fuse);
-
     return fuse.search(query)
         .map(r => ({
             ...r.item,
@@ -108,4 +106,48 @@ function mapDeezerArtist(artist) {
     };
 }
 
-module.exports = { mapAudiusTrack, mapDeezerTrack, mapJamendoTrack, rankTracks, rankAlbums, mapDeezerAlbum, mapDeezerArtist };
+function mapDeezerPlaylist(p) {
+    return {
+        name: p.title,
+        description: p.description || null,
+        cover_path: p.picture_xl || p.picture_big || null,
+        owner_id: null,
+        owner: {
+            name: 'soundy',
+            avatar_url: ''
+        },
+        tracks: (p.tracks || []).map(t => ({
+            deezer_id: t.id,
+            title: t.title,
+            duration_ms: t.duration * 1000,
+            path: t.preview || null,
+            cover_path: null,
+            is_explicit: t.explicit_lyrics,
+            position: null,
+            artists: [{ name: t.artist.name }],
+            album: { title: null }
+        })),
+        collaborators: []
+    };
+}
+
+function rankPlaylists(playlists, query) {
+    const fuse = new Fuse(playlists, {
+        keys: [
+            { name: 'name', weight: 0.7 },
+            { name: 'owner.username', weight: 0.3 }
+        ],
+        includeScore: true,
+        threshold: 0.4,
+        ignoreLocation: true
+    });
+
+    return fuse.search(query)
+        .map(r => ({
+            ...r.item,
+            score: ((r.item.fans ?? 1) * 0.6) + ((1 - (r.score ?? 1)) * 0.4)
+        }))
+        .sort((a, b) => b.score - a.score);
+}
+
+module.exports = { mapAudiusTrack, mapDeezerTrack, mapJamendoTrack, rankTracks, rankAlbums, mapDeezerAlbum, mapDeezerArtist, mapDeezerPlaylist, rankPlaylists };
