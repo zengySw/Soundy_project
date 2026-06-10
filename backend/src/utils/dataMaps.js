@@ -68,17 +68,20 @@ function rankAlbums(albums, query) {
 
     const fuse = new Fuse(albums, {
         keys: [
-            { name: 'title', weight: 0.7 },
-            { name: 'artist', weight: 0.3 }
+            { name: "title", weight: 0.6 },
+            { name: "artists.name", weight: 0.4 }
         ],
         includeScore: true,
-        threshold: 0.4
+        threshold: 0.4,
+        ignoreLocation: true
     });
+
+    console.log('[FUSE SEARCH]',fuse);
 
     return fuse.search(query)
         .map(r => ({
             ...r.item,
-            score: (r.item.rank * 0.6) + ((1 - r.score) * 0.4)
+            score: ((r.item.rank ?? 1) * 0.6) + ((1 - (r.score ?? 1)) * 0.4)
         }))
         .sort((a, b) => b.score - a.score);
 }

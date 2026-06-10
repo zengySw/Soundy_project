@@ -2,7 +2,7 @@ const { findTracks, saveTracks } = require('../repositories/tracks.repo');
 const { findAlbums, saveAlbums } = require('../repositories/albums.repo');
 const { findArtists, saveArtists } = require('../repositories/artists.repo');
 const { searchDeezerTracks, searchDeezerMp3, searchDeezerAlbums, searchDeezerArtists } = require("../external/deezer");
-const { mapDeezerTrack, mapDeezerAlbum, mapDeezerArtist } = require('../utils/dataMaps');
+const { mapDeezerTrack, mapDeezerAlbum, mapDeezerArtist, rankAlbums, rankTracks } = require('../utils/dataMaps');
 const { searchJamendoMp3 } = require('../external/jamendo');
 const { searchAudiusMp3 } = require('../external/audius');
 
@@ -21,20 +21,19 @@ async function searchTracks(q, limit = 1) {
         const res = await searchDeezerTracks(query).then(tracks => tracks.map(t => mapDeezerTrack(t)));
 
         for (const t of res) {
-            const album = (await findAlbums(t.album.title))[0];
-            if (!album) t.album = (await searchAlbums(t.album.title, 1))[0] || null;
-            else t.album = album;
+            t.album = (await searchAlbums(t.album.title, 1))[0] || null;
+            if (!t.album?.id) continue;
             t.artists = await Promise.all(
                 t.artists.map(async (a) => {
                     const found = (await findArtists(a.name))[0];
                     return found || (await searchArtists(a.name, 1))[0] || a;
                 })
             );
-            if (!t.path) t.path = await outSearchMp3(t.title + '' + t.author.name);
+            if (!t.path) t.path = await outSearchMp3(t.title + '' + t.artists[0]?.name);
         }
 
         const ids = await saveTracks(res);
-        results.push(...await findTracks(query, limit)); // rework on ids search
+        results.push(...rankTracks(...await findTracks(query, limit), query)); // rework on ids search
     }
 
     return results;
@@ -72,8 +71,11 @@ async function searchAlbums(q, limit = 1) {
         }
 
         await saveAlbums(res);
-        results.push(...await findAlbums(query, limit));
+        results.push(...rankAlbums(...await findAlbums(query, limit), query));
     }
+
+    console.log('[RESULT OF ALBUMS SEARCH]', results);
+
     return results;
 }
 
