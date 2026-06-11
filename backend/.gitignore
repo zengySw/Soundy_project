@@ -20,9 +20,5 @@ pids
 coverage/
 .nyc_output/
 
-# dotenv
-.env
-.env.*
-
 # misc
 .DS_Store
